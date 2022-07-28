@@ -57,11 +57,15 @@ a {
 }
 
 .show {
-  display: block;
+  display: block !important;
 }
 
 .hide {
-  display: none;
+  display: none !important;
+}
+
+.scroll-lock {
+  overflow: hidden;
 }
 
 .fade {

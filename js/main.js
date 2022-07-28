@@ -86,4 +86,49 @@ window.addEventListener("DOMContentLoaded", () => {
     updateClock();
   }
   setClock(".timer", endtime);
+
+  // Modal
+
+  const modalTrigger = document.querySelectorAll("[data-modal]"),
+    modalCloseBtn = document.querySelector("[data-close]"),
+    modal = document.querySelector(".modal");
+
+  function toggleModalWindow() {
+    modal.classList.toggle("show");
+    document.body.classList.toggle("scroll-lock");
+    clearInterval(modalTimerId);
+  }
+
+  // Hide modal window
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) {
+      toggleModalWindow();
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.code === "Escape" && modal.classList.contains("show")) {
+      toggleModalWindow();
+    }
+  });
+
+  modalCloseBtn.addEventListener("click", toggleModalWindow);
+
+  // Show modal window
+  modalTrigger.forEach((btn) => {
+    btn.addEventListener("click", toggleModalWindow);
+  });
+
+  const modalTimerId = setTimeout(toggleModalWindow, 5000);
+
+  function showModalByScroll() {
+    if (
+      window.pageYOffset + document.documentElement.clientHeight >=
+      document.documentElement.scrollHeight - 1
+    ) {
+      toggleModalWindow();
+      window.removeEventListener("scroll", showModalByScroll);
+    }
+  }
+  window.addEventListener("scroll", showModalByScroll);
 });
