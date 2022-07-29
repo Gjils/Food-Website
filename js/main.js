@@ -96,7 +96,7 @@ window.addEventListener("DOMContentLoaded", () => {
   function toggleModalWindow() {
     modal.classList.toggle("show");
     document.body.classList.toggle("scroll-lock");
-    clearInterval(modalTimerId);
+    // clearInterval(modalTimerId);
   }
 
   // Hide modal window
@@ -119,7 +119,7 @@ window.addEventListener("DOMContentLoaded", () => {
     btn.addEventListener("click", toggleModalWindow);
   });
 
-  const modalTimerId = setTimeout(toggleModalWindow, 5000);
+  // const modalTimerId = setTimeout(toggleModalWindow, 5000);
 
   function showModalByScroll() {
     if (
@@ -131,4 +131,69 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   }
   window.addEventListener("scroll", showModalByScroll);
+
+  // Menu pattern
+
+  const menuBlock = document.querySelector(".menu .container"),
+    menuItems = menuBlock.querySelectorAll(".menu__item"),
+    menuParsedItems = [];
+
+  menuBlock.innerHTML = "";
+
+  menuItems.forEach((item, i) => {
+    menuParsedItems.push({
+      src: item.querySelector("img").getAttribute("src"),
+      alt: "img",
+      title: item.querySelector(".menu__item-subtitle").textContent,
+      descr: item.querySelector(".menu__item-descr").textContent,
+      price: +item.querySelector(".menu__item-total > span").textContent / 27,
+      parentSelector: ".menu .container",
+      classes: item.classList,
+    });
+  });
+
+  class MenuCard {
+    constructor({
+      src,
+      alt = "img",
+      title,
+      descr,
+      price,
+      parentSelector,
+      classes = ["menu__item"],
+    }) {
+      this.src = src;
+      this.title = title;
+      this.descr = descr;
+      this.price = price;
+      this.transfer = 27;
+      this.parent = document.querySelector(parentSelector);
+      this.classes = classes;
+      this.alt = alt;
+    }
+
+    changeToUAH() {
+      this.price *= this.transfer;
+    }
+
+    render() {
+      this.changeToUAH();
+      const element = document.createElement("div");
+      this.classes.forEach((item) => element.classList.add(item));
+      element.innerHTML = `
+          <img src="${this.src}" alt="${this.alt}" />
+          <h3 class="menu__item-subtitle">${this.title}</h3>
+          <div class="menu__item-descr">${this.descr}</div>
+          <div class="menu__item-divider"></div>
+          <div class="menu__item-price">
+            <div class="menu__item-cost">Цена:</div>
+            <div class="menu__item-total"><span>${this.price}</span> грн/день</div>
+          </div>`;
+      this.parent.append(element);
+    }
+  }
+
+  menuItems.forEach((item, i) => {
+    new MenuCard(menuParsedItems[i]).render();
+  });
 });
