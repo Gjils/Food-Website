@@ -137,36 +137,24 @@ window.addEventListener("DOMContentLoaded", () => {
 
   menuBlock.innerHTML = "";
 
-  menuItems.forEach((item, i) => {
-    menuParsedItems.push({
-      src: item.querySelector("img").getAttribute("src"),
-      alt: "img",
-      title: item.querySelector(".menu__item-subtitle").textContent,
-      descr: item.querySelector(".menu__item-descr").textContent,
-      price: +item.querySelector(".menu__item-total > span").textContent / 27,
-      parentSelector: ".menu .container",
-      classes: item.classList,
-    });
-  });
-
   class MenuCard {
     constructor({
-      src,
-      alt = "img",
+      img,
+      altimg,
       title,
       descr,
       price,
       parentSelector,
       classes = ["menu__item"],
     }) {
-      this.src = src;
+      this.img = img;
+      this.alt = altimg;
       this.title = title;
       this.descr = descr;
       this.price = price;
       this.transfer = 27;
       this.parent = document.querySelector(parentSelector);
       this.classes = classes;
-      this.alt = alt;
     }
 
     changeToUAH() {
@@ -178,7 +166,7 @@ window.addEventListener("DOMContentLoaded", () => {
       const element = document.createElement("div");
       this.classes.forEach((item) => element.classList.add(item));
       element.innerHTML = `
-          <img src="${this.src}" alt="${this.alt}" />
+          <img src="${this.img}" alt="${this.alt}" />
           <h3 class="menu__item-subtitle">${this.title}</h3>
           <div class="menu__item-descr">${this.descr}</div>
           <div class="menu__item-divider"></div>
@@ -190,14 +178,31 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  menuItems.forEach((item, i) => {
-    new MenuCard(menuParsedItems[i]).render();
+  const getResource = async (url) => {
+    const res = await fetch("http://localhost:3000/menu");
+
+    if (!res.ok) {
+      throw new Error(`Could'd not fetch ${url}, status ${res.status}`);
+    }
+    return res.json();
+  };
+
+  getResource("http://localhost:3000/menu").then((content) => {
+    content.forEach(({ img, altimg, title, descr, price }) => {
+      new MenuCard(
+        img,
+        altimg,
+        title,
+        descr,
+        price,
+        ".menu .container"
+      ).render();
+    });
   });
 
   // Forms
 
   const forms = document.querySelectorAll("form");
-
   const message = {
     loading: "img/form/spinner.svg",
     success: "Success",
@@ -205,14 +210,25 @@ window.addEventListener("DOMContentLoaded", () => {
   };
 
   forms.forEach((item) => {
-    postData(item);
+    bindPostData(item);
   });
 
-  function postData(form) {
+  const postData = async (url, data) => {
+    let res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-type": "application/json",
+      },
+      body: data,
+    });
+    return await res.json();
+  };
+
+  function bindPostData(form) {
     form.addEventListener("submit", (e) => {
       e.preventDefault();
 
-      const statusMessage = document.createElement("img");
+      let statusMessage = document.createElement("img");
       statusMessage.src = message.loading;
       statusMessage.style.cssText = `
         display: block;
@@ -220,32 +236,23 @@ window.addEventListener("DOMContentLoaded", () => {
       `;
       form.insertAdjacentElement("afterend", statusMessage);
 
-      const request = new XMLHttpRequest();
-      request.open("POST", "server.php");
-      request.setRequestHeader("Content-type", "multipart/json");
-
       const formData = new FormData(form);
 
-      const object = {};
-      formData.forEach((value, key) => {
-        object[key] = value;
-      });
+      const json = JSON.stringify(Object.fromEntries(formData.entries()));
 
-      const json = JSON.stringify(object);
-
-      request.send(json);
-
-      request.addEventListener("load", () => {
-        if (request.status == 200) {
-          console.log(request.response);
+      postData("http://localhost:3000/requests", json)
+        .then((data) => {
+          console.log(data);
           showThanksModal(message.success);
-          form.reset();
           statusMessage.remove();
-        } else {
-          console.log(`Error ${request.status}`);
+        })
+        .catch((data) => {
+          console.log(`Error ${data}`);
           showThanksModal(message.failure);
-        }
-      });
+        })
+        .finally((data) => {
+          form.reset();
+        });
     });
   }
 
@@ -266,8 +273,8 @@ window.addEventListener("DOMContentLoaded", () => {
         <div class="modal__close" data-close>×</div>
         <div class="modal__title">${message}</div>
       </div>`;
-
     document.querySelector(".modal").append(thanksModal);
+
     setTimeout(() => {
       thanksModal.remove();
       prevModalDialog.classList.toggle("hide");
